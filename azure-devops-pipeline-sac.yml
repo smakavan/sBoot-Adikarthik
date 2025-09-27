@@ -1,0 +1,66 @@
+trigger: none
+
+pool:
+  name: 'Local-Linux'
+
+variables:
+  imageName: spring-boot
+  registry: sacdockerzure.azurecr.io # ACR registry name
+  dockerHubRepo: smakavan/spring-boot  # Docker Hub user name and repo or image name
+  tag: $(Build.BuildId)
+
+steps:
+# Step 1: Checkout GitHub repo
+- checkout: self
+
+# Step 2: Login to ACR
+- task: Docker@2
+  displayName: "Login to ACR"
+  inputs:
+    command: login
+    containerRegistry: ACR-Connection
+
+# Step 3: Build Docker image
+- task: Docker@2
+  displayName: "Build Docker Image"
+  inputs:
+    command: build
+    containerRegistry: 'ACR-Connection'   # must match your service connection name
+    repository: $(imageName)              # gives image a repo name
+    dockerfile: '**/Dockerfile'       # Dockerfile path
+    buildContext: '.'
+    tags: |
+      $(tag)
+
+# Step 4: Push Docker image to ACR
+- task: Docker@2
+  displayName: "Push Docker Image"
+  inputs:
+    command: push
+    containerRegistry: 'ACR-Connection'
+    repository: $(imageName)              # same repo name as above
+    tags: |
+      $(tag)
+
+
+# Step 5: Login to Docker Hub
+- task: Docker@2
+  displayName: "Login to Docker Hub"
+  inputs:
+    command: login
+    containerRegistry: DockerHub-Connection   # Service connection name
+
+# Step 6: Tag image for Docker Hub
+- script: |
+    docker tag $(registry)/$(imageName):$(tag) $(dockerHubRepo):$(tag)
+  displayName: "Tag image for Docker Hub"
+
+# Step 7: Push image to Docker Hub
+- task: Docker@2
+  displayName: "Push Docker Image to Docker Hub"
+  inputs:
+    command: push
+    containerRegistry: DockerHub-Connection
+    repository: $(dockerHubRepo)
+    tags: |
+      $(tag)
