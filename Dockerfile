@@ -16,7 +16,7 @@ FROM tomcat:8.5-jdk8
 WORKDIR /usr/local/tomcat/webapps/
 
 # Copy WAR file from the module that produces it
-COPY --from=build /app/**/target/*.war /usr/local/tomcat/webapps/spring-boot-rest-example.war
+COPY --from=build /app/target/*.war /usr/local/tomcat/webapps/spring-boot-rest-example.war
 
 # Expose default Tomcat port
 EXPOSE 8080
